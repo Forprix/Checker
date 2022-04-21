@@ -9,6 +9,11 @@ int main() {
 }
 ```
 
+- CHECK
+- CHECK_EX
+- WIN_CHECK
+- WIN_CHECK_EX
+
 # Definitions:
 ### CHECKER_ASCII
 tells Checker.h to use ASCII. Strings will be made of 'char'
@@ -30,10 +35,10 @@ tells Checker.h to stop playing annoying sound when check fails
 #include "checker.h"
 
 int main() {
-    CreateThread(0, 0, [](LPVOID lpThreadParameter) {
+    CreateThread(0, 0, [](LPVOID) {
         MessageBoxW(0, L"Hang on", L"I am suspended", 0);
         return (DWORD)0;
-    }, 0, 0, NULL);
+    }, 0, 0, 0);
     Sleep(100);
 
     CHECK_EX(false, "Program 'failed', so everything is suspended (Except this thread)");
