@@ -46,3 +46,8 @@ int main() {
     return 0;
 }
 ```
+
+# To do:
+- add support for reporting returned value
+- recode WIN_CHECK usage in some way that it will remind of GetLastError 
+- minimize performance impact on Release even more if possible
