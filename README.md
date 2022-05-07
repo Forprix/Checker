@@ -51,4 +51,5 @@ int main() {
 - * add support for reporting returned value
 - * recode WIN_CHECK usage in such way that it will remind of GetLastError 
 - * minimize performance impact on Release even more if possible
+- * add CHECKER_NO_PATH to let people hide huge dir path if someone's got their project very deep on disk
 - suspend all child processes if they exist
