@@ -11,8 +11,8 @@ int main() {
 
 - CHECK
 - CHECK_EX
-- WIN_CHECK
-- WIN_CHECK_EX
+- WIN_CHECK (*Windows only*)
+- WIN_CHECK_EX (*Windows only*)
 
 # Definitions:
 ### CHECKER_ASCII
