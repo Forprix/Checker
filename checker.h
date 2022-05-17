@@ -114,6 +114,6 @@ void _CKR_WINSYSMSG_FAIL(CheckFailInfo<R, E> info, DWORD error)
 #endif
 #pragma endregion
 
-// Manual for Extending: all util functions related to checker.h must be named like this: _CKR_<NAME>
+#define HANDLE_CHECK_FAIL(info) template<class R, class E> void CheckFail(CheckFailInfo<R, E> info)
 
 #endif
