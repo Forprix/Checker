@@ -12,18 +12,17 @@ Or customize:
 #include <iostream>
 #include "checker.h"
 
-int main() {
+int main()
+{
     CHECK(false, "Oops! Program 'failed'");
 }
 
-template<class R, class E>
-void CheckFail(CheckFailInfo<R, E> info)
+HANDLE_CHECK_FAIL(info)
 {
     std::cout << "Error on line: " << info.line << '\n';
     std::cout << "Description: " << *info.extra << '\n';
     exit(1);
 }
-
 ```
 
 - CHECK
