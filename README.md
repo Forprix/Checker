@@ -38,3 +38,4 @@ HANDLE_CHECK_FAIL(info)
 
 # To do:
 - add options for checkerhandler.h
+- add Linux & MacOS support for checkerhandler.h
