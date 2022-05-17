@@ -1,3 +1,5 @@
+# Description:
+Single header library for assertion
 # Usage:
 ```cpp
 #include "checker.h"
@@ -37,5 +39,7 @@ HANDLE_CHECK_FAIL(info)
 
 
 # To do:
-- add options for checkerhandler.h
-- add Linux & MacOS support for checkerhandler.h
+- Minimize CheckFailInfo for Release
+- add CHECKER_FORCE_DEBUG
+- Add options for checkerhandler.h
+- Add Linux & MacOS support for checkerhandler.h
