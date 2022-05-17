@@ -1,247 +1,119 @@
 #pragma once
+#ifndef _CHECKER_
+#define _CHECKER_
 
-// TODO: for linux, DONT FORGET ABOUT CHECKER_SUSPEND_PROCESS
+#include <cstdlib>
 
-#if !defined(CHECKER_ASCII) && !defined(CHECKER_WIDE)
-    #if defined(_UNICODE) || defined(UNICODE)
-        #define CHECKER_WIDE
-    #else
-        #define CHECKER_ASCII
-    #endif
-#else
-    #if defined(CHECKER_ASCII) && defined(CHECKER_WIDE)
-        #error You can't define both CHECKER_WIDE and CHECKER_ASCII
-    #endif 
-#endif
-
-#pragma region Includes
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#include <Windows.h>
-#ifdef CHECKER_SUSPEND_PROCESS
-#include <Tlhelp32.h>
-#endif
-#define _CKRWIN
-#endif
-#include <sstream>
-#include <string>
-#ifndef CHECKER_SILENT
-#pragma comment(lib, "Winmm")
-#endif
-#pragma endregion
-
-#ifndef _MSC_VER
-#define __FUNCTION__ __func__
-#endif
+template <class R, class E>
+struct CheckFailInfo
+{
+    const char* file;
+    const char* function;
+    int line;
+    const char* code;
+    const char* info;
+    R* returned;
+    E* extra;
+};
 
 #pragma region Util
-#ifdef CHECKER_WIDE
-#define _CKRCHAR wchar_t
-#define _CKRF1(x) L ## x
-#define _CKRF2(x) _CKRF1(x)
-#define _CKRF3(x) _CKRF1(#x)
-#define _CKRF4(x) _CKRF3(x)
-#define _CKRAU(a, u) u
+
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(_WIN64)
+#define _CKR_WIN
+#elif defined(__linux__)
+#define _CKR_LNX
+#error Linux is not supported yet
+#elif defined(__APPLE__) && defined(__MACH__)
+#define _CKR_MAC
+#error MacOS is not supported yet
 #else
-#define _CKRCHAR char
-#define _CKRF1(x) x
-#define _CKRF2(x) _CKRF1(x)
-#define _CKRF3(x) #x
-#define _CKRF4(x) _CKRF3(x)
-#define _CKRAU(a, u) a
+#error Unknown & unsupported OS
 #endif
+
+#ifdef _MSC_VER
+#define _CKR_FUN __FUNCTION__
+#else
+#define _CKR_FUN __func__
+#endif
+
+#define _CKR_STR(s) #s
+
+template <class R, class E>
+constexpr inline static CheckFailInfo<R, E> _CKR_CFI(const char* file, const char* function, int line, const char* code, const char* info, R returned, E extra)
+{
+    return CheckFailInfo<R, E>{file, function, line, code, info, &returned, &extra};
+}
+template <class R>
+constexpr inline static CheckFailInfo<R, int> _CKR_CFI(const char* file, const char* function, int line, const char* code, const char* info, R returned)
+{
+    return CheckFailInfo<R, int>{file, function, line, code, info, &returned, 0};
+}
+
 #pragma endregion
 
-struct CheckFailureInfo
-{
-#ifndef NDEBUG
-    const _CKRCHAR* lineNumber;
-    const _CKRCHAR* filePath;
-    const _CKRCHAR* functionName;
-    const _CKRCHAR* codeFragment;
-#endif
-    const _CKRCHAR* moduleName;
-    const _CKRCHAR* generatedInfo;
-    const _CKRCHAR* userInfo;
-};
-void CheckFailed(CheckFailureInfo info);
-
+template <class R, class E>
+inline static void CheckFail(CheckFailInfo<R, E> info);
+ 
 #pragma region CHECK
-void _CKR_Throw_(CheckFailureInfo info)
-{
-    CheckFailed(info);
-}
-#ifdef NDEBUG
-#define CHECK_EX(statement, info) if (!(statement)) _CKR_Throw_({0, 0, _CKRF1(info)})
-#define CHECK(statement) if (!(statement)) _CKR_Throw_({0, 0, 0})
-#else
-#define CHECK_EX(statement, info) if (!(statement)) _CKR_Throw_({_CKRF4(__LINE__), _CKRF2(__FILE__), _CKRF2(__FUNCTION__), _CKRF1(#statement), 0, 0, _CKRF1(info)})
-#define CHECK(statement) if (!(statement)) _CKR_Throw_({_CKRF4(__LINE__), _CKRF2(__FILE__), _CKRF2(__FUNCTION__), _CKRF1(#statement), 0, 0, 0})
-#endif
+//CHECK_EX(value, condition, [extra])
+#define CHECK_EX(val, con, ...) { auto r = (val); if (!(r con)) CheckFail(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK_EX(## val ##\,\  ## con ##\,\  ## ...##)), 0, r, __VA_ARGS__)); }
+//CHECK(value, [extra])
+#define CHECK(val, ...) { if (!(val)) CheckFail(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK(## val ##\,\  ## ...##)), 0, 0, __VA_ARGS__)); }
+//FAIL([extra])
+#define FAIL(...) { CheckFail(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(FAIL(##...##)), 0, 0, __VA_ARGS__)); }
 #pragma endregion
+
 #pragma region WIN_CHECK
-#ifdef _CKRWIN
-void _CKR_Throw_Windows(CheckFailureInfo info)
+#ifdef _WINDOWS_
+template <class R, class E>
+void _CKR_WINSYSMSG_FAIL(CheckFailInfo<R, E> info, DWORD error)
 {
-    static auto trim = [] (_CKRAU(std::string, std::wstring)& s)
-    {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [] (unsigned char ch) { return !std::isspace(ch); }));
-        s.erase(std::find_if(s.rbegin(), s.rend(), [] (unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
-    };
+    char* msg = 0;
+    size_t size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS |
+        FORMAT_MESSAGE_MAX_WIDTH_MASK, 0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&msg, 0, 0);
 
-    _CKRCHAR* msgBuf = 0;
-    DWORD code = GetLastError();
-    size_t size = _CKRAU(FormatMessageA, FormatMessageW)(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        0, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (_CKRCHAR*)&msgBuf, 0, 0
-        );
-    _CKRAU(std::string, std::wstring) ms(msgBuf);
-    trim(ms);
-    _CKRAU(std::stringstream, std::wstringstream) ss;
-    ss << code << _CKRF1(": ") << ms;
-    _CKRAU(std::string, std::wstring) s = ss.str();
-    info.generatedInfo = s.c_str();
+    char* l = msg;
+    char* r = (char*)((size_t)msg + size - 1);
+    while (r != l) { --r; if (!*r != ' ') { *(r + 1) = 0; break; } }
+    while (r != l && (*l == ' ')) ++l;
+    size_t trimmedMsgSize = r - l + 1;
 
-    CheckFailed(info);
-    LocalFree(msgBuf);
+    char* errorStr = new char[10 + 1];
+    _ultoa_s(error, errorStr, 11, 10);
+    size_t errorStrSize = strlen(errorStr);
+
+    char* fullMsg = new char[errorStrSize + 2 + trimmedMsgSize + 1];
+    memcpy(fullMsg, errorStr, errorStrSize);
+    memcpy(fullMsg + errorStrSize, ": ", 2);
+    memcpy(fullMsg + errorStrSize + 2, l, trimmedMsgSize + 1);
+
+    info.info = fullMsg;
+    CheckFail(info);
+
+    LocalFree(msg);
+    delete[] errorStr;
+    delete[] fullMsg;
 }
-
-#ifdef NDEBUG
-#define WIN_CHECK_EX(statement, info) if (!(statement)) _CKR_Throw_Windows({_CKRF1("Windows.h"), 0, _CKRF1(info)})
-#define WIN_CHECK(statement) if (!(statement)) _CKR_Throw_Windows({_CKRF1("Windows.h"), 0, 0})
-#else
-#define WIN_CHECK_EX(statement, info) if (!(statement)) _CKR_Throw_Windows({_CKRF4(__LINE__), _CKRF2(__FILE__), _CKRF2(__FUNCTION__), _CKRF1(#statement), _CKRF1("Windows.h"), 0, _CKRF1(info)})
-#define WIN_CHECK(statement) if (!(statement)) _CKR_Throw_Windows({_CKRF4(__LINE__), _CKRF2(__FILE__), _CKRF2(__FUNCTION__), _CKRF1(#statement), _CKRF1("Windows.h"), 0, 0})
+//WIN_CHECK_EX(value, condition, [extra])
+#define WIN_CHECK_EX(val, con, ...) { auto r = (val); if (!(r con)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK_EX(## val ##\,\  ## con ##\,\  ## ...##)), 0, r, __VA_ARGS__), GetLastError()); }
+//WIN_CHECK(value, [extra])
+#define WIN_CHECK(val, ...) { if (!(val)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK(## val ##\,\  ## ...##)), 0, 0, __VA_ARGS__), GetLastError()); }
+//WIN_FAIL([extra])
+#define WIN_FAIL(...) { _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(FAIL(##...##)), 0, 0, __VA_ARGS__), GetLastError()); }
+#ifdef _WINSOCK2API_
+//WSA_CHECK_EX(value, condition, [extra])
+#define WSA_CHECK_EX(val, con, ...) { auto r = (val); if (!(r con)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK_EX(## val ##\,\  ## con ##\,\  ## ...##)), 0, r, __VA_ARGS__), WSAGetLastError()); }
+//WSA_CHECK(value, [extra])
+#define WSA_CHECK(val, ...) { if (!(val)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK(## val ##\,\  ## ...##)), 0, 0, __VA_ARGS__), WSAGetLastError()); }
+//WSA_FAIL([extra])
+#define WSA_FAIL(...) { _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(FAIL(##...##)), 0, 0, __VA_ARGS__), WSAGetLastError()); }
 #endif
 #endif
 #pragma endregion
 
-
-#ifndef CHECKER_MANUAL
-
-_CKRAU(std::string, std::wstring) GenerateMessage(CheckFailureInfo info, bool colored)
-{
-    _CKRAU(std::stringstream, std::wstringstream) ss;
-    const _CKRCHAR* yellow; const _CKRCHAR* red; const _CKRCHAR* green; const _CKRCHAR* dflt; const _CKRCHAR* impt;
-    if (colored) { yellow = _CKRF1("\x1b[33m"); green = _CKRF1("\x1b[32m"); red = _CKRF1("\x1b[31m"); dflt = _CKRF1("\x1b[0m"); impt = _CKRF1("\x1b[31;1m"); }
-    else { yellow = _CKRF1(""); green = _CKRF1(""); red = _CKRF1(""); dflt = _CKRF1(""); impt = _CKRF1(""); }
-    ss << impt << _CKRF1("Fatal error happened!") << dflt << _CKRF1('\n');
-#ifndef NDEBUG
-    ss << yellow << _CKRF1("File") << dflt << ": " << info.filePath << _CKRF1('\n');
-    ss << yellow << _CKRF1("Line") << dflt << ": " << info.lineNumber << _CKRF1('\n');
-    ss << yellow << _CKRF1("Function") << dflt << ": " << info.functionName << _CKRF1('\n');
-    ss << yellow << _CKRF1("Code Fragment") << dflt << ": \'" << red << info.codeFragment << dflt << '\'' << _CKRF1('\n');
-#endif
-    if (info.userInfo != 0) ss << yellow << _CKRF1("Specific Info") << dflt << ": \'" << green << info.userInfo << dflt << '\'' << _CKRF1('\n');
-    if (info.moduleName != 0) { ss << yellow << _CKRF1("Module") << dflt << ": " << info.moduleName << _CKRF1('\n'); }
-    if (info.generatedInfo != 0) { ss << yellow << _CKRF1("Generated Info") << dflt << ": \'" << green << info.generatedInfo << dflt << '\'' << _CKRF1('\n'); }
-    ss << dflt;
-    return ss.str();
-}
-
-#ifdef _CKRWIN
-
-//TODO: get rid of warning
-void CheckFailed(CheckFailureInfo info)
-{
-#ifdef CHECKER_SUSPEND_PROCESS
-{
-    DWORD currentProcessId = GetCurrentProcessId();
-    DWORD currentThreadId = GetCurrentThreadId();
-    HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-    if (h != INVALID_HANDLE_VALUE)
-    {
-        THREADENTRY32 te;
-        te.dwSize = sizeof(te);
-        if (Thread32First(h, &te))
-        {
-            do
-            {
-                if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID))
-                {
-                    if (te.th32OwnerProcessID != currentProcessId)
-                        continue;
-                    if (te.th32ThreadID == currentThreadId)
-                        continue;
-                    HANDLE thread = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
-                    if (thread != NULL)
-                    {
-                        SuspendThread(thread);
-                        CloseHandle(thread);
-                    }
-                }
-                te.dwSize = sizeof(te);
-            } while (Thread32Next(h, &te));
-        }
-        CloseHandle(h);
-    }
-}
-#endif
-
-    bool useConsole = false;
-    HANDLE hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOutput == INVALID_HANDLE_VALUE || hOutput == 0)
-    {
-        if (AttachConsole(ATTACH_PARENT_PROCESS) != 0 || AllocConsole() != 0)
-        {
-            hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-            if ((hOutput != INVALID_HANDLE_VALUE) && (hOutput != 0))
-                useConsole = true;
-        }
-    }
-    else
-        useConsole = true;
-    if (useConsole)
-    {
-        UINT cp = GetACP();
-        if ((SetConsoleCP(cp) == 0) || (SetConsoleOutputCP(cp) == 0))
-            useConsole = false;
-    }
-
-#ifndef CHECKER_SILENT
-    PlaySoundW(L"C:\\Windows\\Media\\Windows Error.wav", NULL, SND_FILENAME | SND_ASYNC);
-#endif
-
-    _CKRAU(std::string, std::wstring) s;
-    bool colored = false;
-    if (useConsole)
-    {
-        DWORD dummy = 0;
-        if (GetConsoleMode(hOutput, &dummy) != NULL)
-        {
-            dummy |= ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-            if (SetConsoleMode(hOutput, dummy) != NULL)
-                colored = true;
-        }
-
-        s = GenerateMessage(info, colored);
-
-        SetActiveWindow(GetConsoleWindow());
-
-        if (_CKRAU(WriteConsoleA, WriteConsoleW)(hOutput, s.c_str(), (DWORD)s.length(), &dummy, 0) == 0)
-            goto mbox;
-
-        char ch;
-        if (_CKRAU(ReadConsoleA, ReadConsoleW)(GetStdHandle(STD_INPUT_HANDLE), &ch, 1, &dummy, 0) == 0)
-            goto mbox;
-
-        goto exit;
-    }
-mbox:
-    if (colored)
-        s = GenerateMessage(info, false);
-    _CKRAU(MessageBoxA, MessageBoxW)(0, s.c_str(), _CKRF1("Error"), 0);
-exit:
-    ExitProcess(1);
-}
-
-#else
-
-void CheckFailed(CheckFailureInfo info)
-{
-    exit(1);
-}
-#endif
-
-
+// Manual for Extending: all util functions related to checker.h must be named like this: _CKR_<NAME>
 
 #endif
