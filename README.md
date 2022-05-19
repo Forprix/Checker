@@ -23,6 +23,7 @@ HANDLE_CHECK_FAIL(info)
 {
     std::cout << "Error on line: " << info.line << '\n';
     std::cout << "Description: " << *info.extra << '\n';
+    std::cin.get(); //make console hang
     exit(1);
 }
 ```
