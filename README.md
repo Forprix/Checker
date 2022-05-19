@@ -44,3 +44,4 @@ HANDLE_CHECK_FAIL(info)
 - add CHECKER_FORCE_DEBUG
 - Add options for checkerhandler.h
 - Add Linux & MacOS support for checkerhandler.h
+- ReadConsole on invisible console can hang up everything
