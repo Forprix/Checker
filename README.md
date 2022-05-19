@@ -43,3 +43,4 @@ HANDLE_CHECK_FAIL(info)
 - add CHECKER_FORCE_DEBUG
 - Add options for checkerhandler.h
 - Add Linux & MacOS support for checkerhandler.h
+- Use SetWindowsHookEx instead of ReadConsoleA
