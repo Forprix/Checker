@@ -114,8 +114,14 @@ void CheckFail(CheckFailInfo<R, E> info)
         }
 
         s = _CKR_GENFAILMSG(info, colored);
+        
+        auto cw = GetConsoleWindow();
 
-        SetActiveWindow(GetConsoleWindow());
+        ShowWindow(cw, SW_SHOW);
+        SetActiveWindow(cw);
+
+        if (!IsWindowVisible(cw))
+            goto mbox;
 
         if (WriteConsoleA(hOutput, s.c_str(), (DWORD)s.length(), &dummy, 0) == 0)
             goto mbox;
