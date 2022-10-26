@@ -52,7 +52,7 @@ constexpr inline static CheckFailInfo<R, int> _CKR_CFI(const char* file, const c
 #pragma endregion
 
 template <class R, class E>
-inline static void CheckFail(CheckFailInfo<R, E> info);
+inline void CheckFail(CheckFailInfo<R, E> info);
  
 #pragma region CHECK
 //CHECK_EX(value, condition, [extra])
