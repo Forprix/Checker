@@ -98,18 +98,18 @@ void _CKR_WINSYSMSG_FAIL(CheckFailInfo<R, E> info, DWORD error)
     delete[] fullMsg;
 }
 //WIN_CHECK_EX(value, condition, [extra])
-#define WIN_CHECK_EX(val, con, ...) { auto r = (val); if (!(r con)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK_EX(## val ##\,\  ## con ##\,\  ## ...##)), 0, r, __VA_ARGS__), GetLastError()); }
+#define WIN_CHECK_EX(val, con, ...) { auto r = (val); if (!(r con)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(WIN_CHECK_EX(## val ##\,\  ## con ##\,\  ## ...##)), 0, r, __VA_ARGS__), GetLastError()); }
 //WIN_CHECK(value, [extra])
-#define WIN_CHECK(val, ...) { if (!(val)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK(## val ##\,\  ## ...##)), 0, 0, __VA_ARGS__), GetLastError()); }
+#define WIN_CHECK(val, ...) { if (!(val)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(WIN_CHECK(## val ##\,\  ## ...##)), 0, 0, __VA_ARGS__), GetLastError()); }
 //WIN_FAIL([extra])
-#define WIN_FAIL(...) { _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(FAIL(##...##)), 0, 0, __VA_ARGS__), GetLastError()); }
+#define WIN_FAIL(...) { _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(WIN_FAIL(##...##)), 0, 0, __VA_ARGS__), GetLastError()); }
 #ifdef _WINSOCK2API_
 //WSA_CHECK_EX(value, condition, [extra])
-#define WSA_CHECK_EX(val, con, ...) { auto r = (val); if (!(r con)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK_EX(## val ##\,\  ## con ##\,\  ## ...##)), 0, r, __VA_ARGS__), WSAGetLastError()); }
+#define WSA_CHECK_EX(val, con, ...) { auto r = (val); if (!(r con)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(WSA_CHECK_EX(## val ##\,\  ## con ##\,\  ## ...##)), 0, r, __VA_ARGS__), WSAGetLastError()); }
 //WSA_CHECK(value, [extra])
-#define WSA_CHECK(val, ...) { if (!(val)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(CHECK(## val ##\,\  ## ...##)), 0, 0, __VA_ARGS__), WSAGetLastError()); }
+#define WSA_CHECK(val, ...) { if (!(val)) _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(WSA_CHECK(## val ##\,\  ## ...##)), 0, 0, __VA_ARGS__), WSAGetLastError()); }
 //WSA_FAIL([extra])
-#define WSA_FAIL(...) { _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(FAIL(##...##)), 0, 0, __VA_ARGS__), WSAGetLastError()); }
+#define WSA_FAIL(...) { _CKR_WINSYSMSG_FAIL(_CKR_CFI(__FILE__, _CKR_FUN, __LINE__, _CKR_STR(WSA_FAIL(##...##)), 0, 0, __VA_ARGS__), WSAGetLastError()); }
 #endif
 #endif
 #pragma endregion
