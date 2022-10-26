@@ -70,7 +70,7 @@ static void _CKR_SUSPRCS()
     }
 }
 template<class R, class E>
-static void CheckFail(CheckFailInfo<R, E> info)
+void CheckFail(CheckFailInfo<R, E> info)
 {
     _CKR_SUSPRCS();
 
