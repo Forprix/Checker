@@ -35,7 +35,7 @@ std::string _CKR_GENFAILMSG(CheckFailInfo<R, E> info, bool colored)
 }
 
 #ifdef _CKR_WIN
-void _CKR_SUSPRCS()
+static void _CKR_SUSPRCS()
 {
     {
         DWORD currentProcessId = GetCurrentProcessId();
