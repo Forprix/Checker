@@ -12,7 +12,7 @@
 #endif
 
 template<class R, class E>
-std::string _CKR_GENFAILMSG(CheckFailInfo<R, E> info, bool colored)
+static std::string _CKR_GENFAILMSG(CheckFailInfo<R, E> info, bool colored)
 {
     std::stringstream ss;
 
@@ -70,7 +70,7 @@ static void _CKR_SUSPRCS()
     }
 }
 template<class R, class E>
-void CheckFail(CheckFailInfo<R, E> info)
+static void CheckFail(CheckFailInfo<R, E> info)
 {
     _CKR_SUSPRCS();
 
