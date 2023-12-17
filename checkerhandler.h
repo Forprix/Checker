@@ -126,7 +126,7 @@ void CheckFail(CheckFailInfo<R, E> info)
         if (WriteConsoleA(hOutput, s.c_str(), (DWORD)s.length(), &dummy, 0) == 0)
             goto mbox;
 
-        char ch[2];
+        char ch;
         if (ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), &ch, 1, &dummy, 0) == 0)
             goto mbox;
 
